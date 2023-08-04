@@ -371,7 +371,7 @@ kafka-connect-1:
 ```
 
 
-We open 8083 port on 1st instance to be able to deploy connectors configurations with rest endpoints.
+We open `8083` port on 1st instance to be able to deploy connectors configurations with rest endpoints.
 
 Add both nodes to kafka UI in the kafka-target cluster:
 ```yaml
@@ -422,10 +422,10 @@ docker compose exec kafka-source-0 /opt/bitnami/kafka/bin/kafka-console-producer
 # Mirror Maker 2 Connectors
 
 Basically we need 3 configuration files:
-- The MirrorHeartbeatConnector provides heartbeats, monitoring of replication flows, and 
+- The `MirrorHeartbeatConnector` provides heartbeats, monitoring of replication flows, and 
   client discovery of replication topologies (which can be more complex than for the original MirrorMaker).
-- The MirrorCheckpointConnector manages consumer offset synchronization, emits checkpoints, and enables failover.
-- The MirrorSourceConnector replicates records from local to remote clusters and enables offset synchronization.
+- The `MirrorCheckpointConnector` manages consumer offset synchronization, emits checkpoints, and enables failover.
+- The `MirrorSourceConnector` replicates records from local to remote clusters and enables offset synchronization.
      
 More details here: https://www.instaclustr.com/blog/kafka-mirrormaker-2-theory/
 
@@ -643,7 +643,7 @@ Open kafka-ui and check, that
 1.	Kafka connect contains connectors
 2.	Topic was replicated in target-0 cluster
 
-# Conslusion
+# Conclusion
 We can see that the replication is working. All messages appeared in target cluster.
 
 # Links
