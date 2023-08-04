@@ -28,6 +28,9 @@ MM2 can run in 3 main modes (https://cwiki.apache.org/confluence/display/KAFKA/K
 We are going to deploy mm2 inside kafka connect cluster. We will create configuration for the worker, 
 monitor workers using kafka.
 
+
+# Initial setup
+
 Let’s start with 2 clusters and helper application:
 - Source cluster (2 nodes)
 - Target cluster (2 nodes)
@@ -39,8 +42,6 @@ Let’s start with 2 clusters and helper application:
 For the details of this deployment, please read my previous article:
 https://medium.com/@penkov.vladimir/kafka-cluster-with-ui-and-metrics-easy-setup-d12d1b94eccf.
 
-
-# Initial setup
 The `docker-compose.yml` config will be like this:
 
 ```yaml
