@@ -12,7 +12,7 @@ scrape_configs:
     static_configs:
       - targets:
           - kafka-exporter:9308
-  - job_name: jmx-exporter
+  - job_name: kafka-source-exporter
     honor_timestamps: true
     scrape_interval: 15s
     scrape_timeout: 10s
@@ -22,7 +22,23 @@ scrape_configs:
       - targets:
           - kafka-source-0:9404
           - kafka-source-1:9404
+  - job_name: kafka-target-exporter
+    honor_timestamps: true
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
           - kafka-target-0:9404
           - kafka-target-1:9404
+  - job_name: kafka-connect-exporter
+    honor_timestamps: true
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
           - kafka-connect-0:9404
           - kafka-connect-1:9404
