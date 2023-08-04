@@ -38,6 +38,34 @@ x-kafka-target-env-common: &kafka-target-env-common
   KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
   EXTRA_ARGS: "-Xms128m -Xmx256m -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9404:/opt/jmx-exporter/kafka-2_0_0.yml"
 
+x-kafka-connect-env-common: &kafka-connect-env-common
+  KAFKA_HEAP_OPTS: "-Xmx256m -Xms128M -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9404:/opt/jmx-exporter/kafka-2_0_0.yml"
+
+x-kafka-connect-common: &kafka-connect-common
+  image: 'bitnami/kafka:latest'
+  networks:
+    - kafka
+  volumes:
+    - ./jmx-exporter:/opt/jmx-exporter
+    - ./kafka-connect/connect-distributed.properties:/opt/bitnami/kafka/config/connect-distributed.properties
+  depends_on:
+    kafka-target-0:
+      condition: service_healthy
+    kafka-target-1:
+      condition: service_healthy
+  command: /opt/bitnami/kafka/bin/connect-distributed.sh /opt/bitnami/kafka/config/connect-distributed.properties
+  healthcheck:
+    test: "bash -c 'printf \"\" > /dev/tcp/127.0.0.1/8083; exit $$?;'"
+    interval: 5s
+    timeout: 10s
+    retries: 3
+    start_period: 30s
+  restart: unless-stopped
+  environment:
+    <<: *kafka-connect-env-common
+
+
+
 
 services:
 
@@ -76,6 +104,20 @@ services:
     volumes:
       - kafka_3_data:/bitnami/kafka
       - ./jmx-exporter:/opt/jmx-exporter
+
+
+  kafka-connect-0:
+    <<: *kafka-connect-common
+    hostname: kafka-connect-0
+    ports:
+      - '8083:8083'
+
+  kafka-connect-1:
+    <<: *kafka-connect-common
+    hostname: kafka-connect-1
+
+
+
 
 
   kafka-ui:

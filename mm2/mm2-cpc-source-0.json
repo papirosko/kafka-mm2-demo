@@ -1,0 +1,10 @@
+{
+  "name": "mm2-cpc-source-0",
+  "connector.class": "org.apache.kafka.connect.mirror.MirrorCheckpointConnector",
+  "key.converter": "org.apache.kafka.connect.converters.ByteArrayConverter",
+  "value.converter": "org.apache.kafka.connect.converters.ByteArrayConverter",
+  "source.cluster.alias": "source-0",
+  "source.cluster.bootstrap.servers": "kafka-source-0:9092,kafka-source-1:9092",
+  "target.cluster.alias": "target-0",
+  "target.cluster.bootstrap.servers": "kafka-target-0:9092,kafka-target-1:9092"
+}

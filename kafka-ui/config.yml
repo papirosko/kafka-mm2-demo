@@ -12,13 +12,17 @@ kafka:
     - bootstrapServers: kafka-source-0:9092,kafka-source-1:9092
       name: kafka-source
       metrics:
-        type: JMX
+        type: PROMETHEUS
         port: 9404
 
     - bootstrapServers: kafka-target-0:9092,kafka-target-1:9092
       name: kafka-target
+      kafkaConnect:
+        - address: http://kafka-connect-0:8083
+          name: kafka-connect-0
+        - address: http://kafka-connect-1:8083
+          name: kafka-connect-1
       metrics:
-        type: JMX
+        type: PROMETHEUS
         port: 9404
-
 

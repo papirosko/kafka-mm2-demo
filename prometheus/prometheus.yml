@@ -24,3 +24,5 @@ scrape_configs:
           - kafka-source-1:9404
           - kafka-target-0:9404
           - kafka-target-1:9404
+          - kafka-connect-0:9404
+          - kafka-connect-1:9404
