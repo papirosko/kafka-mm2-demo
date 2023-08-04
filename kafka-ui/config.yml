@@ -1,0 +1,24 @@
+auth:
+  type: LOGIN_FORM
+
+spring:
+  security:
+    user:
+      name: admin
+      password: admin
+
+kafka:
+  clusters:
+    - bootstrapServers: kafka-source-0:9092,kafka-source-1:9092
+      name: kafka-source
+      metrics:
+        type: JMX
+        port: 9404
+
+    - bootstrapServers: kafka-target-0:9092,kafka-target-1:9092
+      name: kafka-target
+      metrics:
+        type: JMX
+        port: 9404
+
+

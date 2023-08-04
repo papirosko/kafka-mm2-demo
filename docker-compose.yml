@@ -1,0 +1,189 @@
+version: '3.8'
+
+x-kafka-common: &kafka-common
+  image: 'bitnami/kafka:latest'
+  ports:
+    - "9092"
+  networks:
+    - kafka
+  healthcheck:
+    test: "bash -c 'printf \"\" > /dev/tcp/127.0.0.1/9092; exit $$?;'"
+    interval: 5s
+    timeout: 10s
+    retries: 3
+    start_period: 30s
+  restart: unless-stopped
+
+
+
+
+x-kafka-source-env-common: &kafka-source-env-common
+  ALLOW_PLAINTEXT_LISTENER: 'yes'
+  KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: 'true'
+  KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka-source-0:9093,1@kafka-source-1:9093
+  KAFKA_KRAFT_CLUSTER_ID: abcdefghijklmnopqrstuv
+  KAFKA_CFG_PROCESS_ROLES: controller,broker
+  KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+  EXTRA_ARGS: "-Xms128m -Xmx256m -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9404:/opt/jmx-exporter/kafka-2_0_0.yml"
+
+
+x-kafka-target-env-common: &kafka-target-env-common
+  ALLOW_PLAINTEXT_LISTENER: 'yes'
+  KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: 'true'
+  KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka-target-0:9093,1@kafka-target-1:9093
+  KAFKA_KRAFT_CLUSTER_ID: abcdef123jklmnopqrstuv
+  KAFKA_CFG_PROCESS_ROLES: controller,broker
+  KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+  EXTRA_ARGS: "-Xms128m -Xmx256m -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9404:/opt/jmx-exporter/kafka-2_0_0.yml"
+
+
+services:
+
+  kafka-source-0:
+    <<: *kafka-common
+    environment:
+      <<: *kafka-source-env-common
+      KAFKA_CFG_NODE_ID: 0
+    volumes:
+      - kafka_0_data:/bitnami/kafka
+      - ./jmx-exporter:/opt/jmx-exporter
+
+  kafka-source-1:
+    <<: *kafka-common
+    environment:
+      <<: *kafka-source-env-common
+      KAFKA_CFG_NODE_ID: 1
+    volumes:
+      - kafka_1_data:/bitnami/kafka
+      - ./jmx-exporter:/opt/jmx-exporter
+
+  kafka-target-0:
+    <<: *kafka-common
+    environment:
+      <<: *kafka-target-env-common
+      KAFKA_CFG_NODE_ID: 0
+    volumes:
+      - kafka_2_data:/bitnami/kafka
+      - ./jmx-exporter:/opt/jmx-exporter
+
+  kafka-target-1:
+    <<: *kafka-common
+    environment:
+      <<: *kafka-target-env-common
+      KAFKA_CFG_NODE_ID: 1
+    volumes:
+      - kafka_3_data:/bitnami/kafka
+      - ./jmx-exporter:/opt/jmx-exporter
+
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    volumes:
+      - ./kafka-ui/config.yml:/etc/kafkaui/dynamic_config.yaml
+    environment:
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    depends_on:
+      kafka-source-0:
+        condition: service_healthy
+      kafka-source-1:
+        condition: service_healthy
+      kafka-target-0:
+        condition: service_healthy
+      kafka-target-1:
+        condition: service_healthy
+    networks:
+      - kafka
+    ports:
+      - '8080:8080'
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider localhost:8080 || exit 1
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
+    networks:
+      - kafka
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider localhost:9090 || exit 1
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+
+  kafka-exporter:
+    image: docker.io/bitnami/kafka-exporter:latest
+    depends_on:
+      kafka-source-0:
+        condition: service_healthy
+      kafka-source-1:
+        condition: service_healthy
+      kafka-target-0:
+        condition: service_healthy
+      kafka-target-1:
+        condition: service_healthy
+    ports:
+      - "9308:9308"
+    networks:
+      - kafka
+    command: --kafka.server=kafka-source-0:9092 --kafka.server=kafka-source-1:9092 --kafka.server=kafka-target-0:9092 --kafka.server=kafka-target-1:9092
+    healthcheck:
+      test: "bash -c 'printf \"\" > /dev/tcp/127.0.0.1/9308; exit $$?;'"
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - kafka
+    healthcheck:
+      test: curl --fail localhost:3000
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+
+
+networks:
+  kafka:
+
+volumes:
+  kafka_0_data:
+    driver: local
+  kafka_1_data:
+    driver: local
+  kafka_2_data:
+    driver: local
+  kafka_3_data:
+    driver: local
+  prom_data:
+    driver: local
+
+
+
